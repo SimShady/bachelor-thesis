@@ -1,0 +1,628 @@
+\chapter{Appendix}
+\section{Figure source code} \label{sec:figure_sourcecode}
+  \begin{lstlisting}[language=Python,caption=Source code for Figure \ref{fig:bloch_qubits},label=lst:bloch_source]
+ from qiskit import QuantumCircuit
+ from qiskit.quantum_info import Statevector
+ from qiskit.visualization import plot_bloch_multivector
+
+ qc1 = QuantumCircuit(1)
+ qc2 = QuantumCircuit(1)
+ qc2.h(0)
+
+ state1 = Statevector(qc1)*1.03
+ state2 = Statevector(qc2)*1.03
+ fig1 = plot_bloch_multivector(state1)
+ fig1.get_axes()[0].set_title("")
+ fig2 = plot_bloch_multivector(state2)
+ fig2.get_axes()[0].set_title("")
+
+ fig1.savefig("bloch_0.pdf")
+ fig2.savefig("bloch_superposition.pdf")
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=Source code for Figure \ref{fig:example_quantum_circuit},label=lst:example_circuit_source]
+ from qiskit import QuantumCircuit
+ from qiskit.circuit import QuantumRegister, ClassicalRegister
+
+ qr = QuantumRegister(3, name="q")
+ cr = ClassicalRegister(3, name="c")
+ qc = QuantumCircuit(qr, cr)
+
+ q0,q1,q2 = qr
+ c0,c1,c2 = cr
+
+ qc.h(q0)
+ qc.cx(q1,q2)
+ qc.h(q1)
+ qc.cx(q0, q2)
+ qc.measure(q0, c0)
+ qc.measure(q1, c1)
+ qc.measure(q2, c2)
+
+ qc.draw(output="mpl", filename="example_quantum_circuit.pdf")
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=Source code for Figure \ref{fig:example_circuit_results},label=lst:circuit_results_source]
+ from qiskit import QuantumCircuit, transpile
+ from qiskit.circuit import QuantumRegister, ClassicalRegister
+ from qiskit_aer import AerSimulator
+ from qiskit.visualization import plot_histogram
+
+ qr = QuantumRegister(3, name="q")
+ cr = ClassicalRegister(3, name="c")
+ qc = QuantumCircuit(qr, cr)
+
+ q0,q1,q2 = qr
+ c0,c1,c2 = cr
+
+ qc.h(q0)
+ qc.cx(q1,q2)
+ qc.h(q1)
+ qc.cx(q0, q2)
+ qc.measure(q0, c0)
+ qc.measure(q1, c1)
+ qc.measure(q2, c2)
+
+ simulator = AerSimulator()
+ circ = transpile(qc, simulator)
+
+ result = simulator.run(qc, shots=100000).result()
+ counts = result.get_counts(qc)
+ plot_histogram(
+   counts,
+   title="Simulation of 100 000 runs of the circuit",
+   filename="qc_results.pdf"
+ )
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=Source code fore Figure \ref{fig:compression_qubit_circuit},label=lst:compression_qubit_circuit_source]
+ from qiskit import QuantumCircuit
+
+ qc = QuantumCircuit(4,4)
+ qc.h(0)
+ qc.h(1)
+ qc.h(2)
+ qc.h(3)
+ qc.cz(0,1)
+ qc.cz(2,3)
+ qc.cz(1,2)
+ qc.measure(0,0)
+ qc.measure(1,1)
+ qc.measure(2,2)
+ qc.measure(3,3)
+
+ qc.draw(output="mpl", filename="qubit_circuit.pdf")
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=Source code fore Figure \ref{fig:compressed_ququart_circuit},label=lst:compression_ququart_circuit_source]
+ from matplotlib.figure import Figure
+ from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+ from qiskit.circuit import Gate
+
+ qr = QuantumRegister(2, name='q^4')
+ cr = ClassicalRegister(4, name='c')
+ qc = QuantumCircuit(qr,cr)
+ qc.append(Gate(name=r'$H_4$', num_qubits=1, params=[]),[0])
+ qc.append(Gate(name=r'$H_4$', num_qubits=1, params=[]),[1])
+ qc.append(Gate(name=r'$CZ$', num_qubits=1, params=[]),[0])
+ qc.append(Gate(name=r'$CZ$', num_qubits=1, params=[]),[1])
+ qc.append(Gate(name=r'$CZ_{16}$', num_qubits=2, params=[1,0]),[0,1])
+ qc.measure(0,0)
+ qc.measure(1,2)
+
+ fig: Figure = qc.draw(output="mpl", style={
+   'displaycolor': {
+     '$H_4$': ('#fA4D56', '#000000'),
+     '$CZ$': ('#33B1FF', '#000000'),
+     '$CZ_{16}$': ('#33B1FF', '#000000')
+   }
+ }) # type: ignore
+ ax = fig.get_axes()[0]
+ ax.text(
+     2.77608 + 1.6,
+     -2 + 0.1,
+     ",1",
+     ha="left",
+     va="bottom",
+     fontsize=0.8 * 13,
+     color="#000000",
+     clip_on=True,
+     zorder=13,
+ )
+ ax.text(
+     3.77608 + 1.6,
+     -2 + 0.1,
+     ",3",
+     ha="left",
+     va="bottom",
+     fontsize=0.8 * 13,
+     color="#000000",
+     clip_on=True,
+     zorder=13,
+ )
+ fig.savefig("compressed.pdf")
+  \end{lstlisting}
+\section{Project source code} \label{sec:project_source}
+  \begin{lstlisting}[language=Python,caption=\texttt{graph.py},label=lst:graph.py]
+from typing import Callable
+
+class Graph:
+  def __init__(
+    self,
+    edge_list: list[tuple[int, int, int]],
+    node_weights: list[int]
+  ):
+    self.edge_list = edge_list.copy()
+    self.node_weights = node_weights.copy()
+  
+  def get_reduced_graph_by_label(
+    self,
+    labels: list[int]
+  ) -> "Graph":
+    new_node_weights = [0]*len(set(labels))
+    for i in range(len(labels)):
+      label = labels[i]
+      new_node_weights[label] += self.node_weights[i]
+
+    new_edge_list = []
+    for edge in self.edge_list:
+      node1 = edge[0]
+      node2 = edge[1]
+      weight = edge[2]
+      if labels[node1] != labels[node2]:
+        new_edge_list.append((labels[node1], labels[node2], weight))
+    return Graph(new_edge_list, new_node_weights)
+  
+  def reduce_graph(
+    self,
+    clustering_function: Callable[["Graph"],list[int]],
+    max_runs=1
+  ) -> tuple[list["Graph"], list[list[int]]]:
+    graph_history: list["Graph"] = []
+    labels_history = []
+    graph = self.copy()
+
+    graph_history.append(graph)
+    for runs in range(max_runs):
+      labels = clustering_function(graph)
+      graph = graph.get_reduced_graph_by_label(labels)
+      if not graph.edge_list:
+        break # stop if reduced graph does not have any edges left
+      labels_history.append(labels)
+      graph_history.append(graph.copy())
+    return graph_history, labels_history
+  
+  def copy(self) -> "Graph":
+    return Graph(self.edge_list.copy(), self.node_weights.copy())
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=\texttt{circuit.py},label=lst:circuit.py]
+import math
+import json
+from qiskit import QuantumCircuit
+
+from graph import Graph
+
+class Instruction:
+  def __init__(
+    self, name: str,
+    qubits: list[int],
+    params: list[float]
+  ):
+    self.name = name
+    self.qubits = qubits.copy()
+    self.params = params.copy()
+
+class Qudit:
+  def __init__(
+    self, number: int,
+    dimensions: int
+  ):
+    self.number = number
+    self.dimensions = dimensions
+  
+  def toJSON(self) -> str:
+    return json.dumps({
+      "number": self.number,
+      "dimensions": self.dimensions
+    })
+
+  def has_level(self, level: int) -> bool:
+    return level >=0 and level < self.dimensions
+
+class QuditGate:
+  def __init__(
+    self, name: str,
+    qudits: list[Qudit],
+    levels: list[int],
+    euler_angles: tuple[float, float, float]=(0, 0, 0)
+  ):
+    self.name = name
+    self.qudits = qudits
+    self.euler_angles = euler_angles
+    for i in range(len(self.qudits)):
+      qudit = self.qudits[i]
+      level = levels[i]
+      if (not qudit.has_level(levels[i])):
+        raise ValueError(
+          f"Qudit {qudit.number} has dimension {qudit.dimensions}, it has no level {level}"
+        )
+    self.levels = levels
+
+  def toJSON(self) -> str:
+    return json.dumps({
+      "name": self.name,
+      "qudits": [qudit.number for qudit in self.qudits],
+      "levels": self.levels,
+      "euler_angles": self.euler_angles
+    })
+
+class Circuit:
+  def __init__(
+    self, qudits: list[Qudit],
+    gate_list: list[QuditGate]
+  ):
+    self.qudits = qudits
+    self.gate_list = gate_list
+
+  def toJSON(self) -> str:
+    return json.dumps({
+      "qudits": [json.loads(qudit.toJSON()) for qudit in self.qudits],
+      "gates": [json.loads(gate.toJSON()) for gate in self.gate_list]
+    })
+  
+  @staticmethod
+  def from_qasm(file: str) -> "Circuit":
+    qc = QuantumCircuit.from_qasm_file(file)
+    instructions, num_qubits = Circuit.__collect_instructions(qc)
+    qudits: list[Qudit] = [Qudit(i, 1) for i in range(num_qubits*2)]
+    gate_list: list[QuditGate] = []
+    for instruction in instructions:
+      if instruction.name != "measure" and instruction.name != "barrier":
+        if instruction.name == "cz":
+          control_qubit = instruction.qubits[0]
+          target_qubit = instruction.qubits[1]
+          control_qudit = qudits[control_qubit*2+1] # qubit level 1
+          target_qudit = qudits[target_qubit*2+1] # qubit level 1
+          gate = QuditGate("cz", [control_qudit, target_qudit], [0, 0])
+          gate_list.append(gate)
+        else:
+          qubit = instruction.qubits[0]
+          gate_qudits = [qudits[qubit*2], qudits[qubit*2+1]]
+          euler_angles: tuple[float, float, float] = (0, 0, 0)
+          match instruction.name:
+            case "u1":
+              euler_angles = (0, 0, instruction.params[0])
+            case "u2":
+              euler_angles = (math.pi/2, instruction.params[1], instruction.params[0])
+            case "u3":
+              euler_angles = (instruction.params[2], instruction.params[1], instruction.params[0])
+            case _:
+              raise ValueError("Unsupported gate " + instruction.name)
+          gate = QuditGate("u", gate_qudits, [0, 0], euler_angles)
+          gate_list.append(gate)
+    return Circuit(qudits, gate_list)
+  
+  def generate_weighted_graph(self, local_weight=400, entangling_weight=100) -> Graph:
+    edge_list: list[tuple[int, int, int]] = []
+    for gate in self.gate_list:
+      edge_list.append((gate.qudits[0].number, gate.qudits[1].number, entangling_weight if gate.name == "cz" else local_weight))
+    qudit_dimensions = [qudit.dimensions for qudit in self.qudits]
+    return Graph(edge_list, node_weights=qudit_dimensions)
+  
+  def get_updated_circuit_by_labels(self, labels: list[int]) -> "Circuit":
+    if (len(labels) != len(self.qudits)):
+      raise ValueError("Every qudit needs a label")
+    
+    qudits = [Qudit(i, 0) for i in range(len(set(labels)))]
+    for i, label in enumerate(labels):
+      qudits[label].dimensions += self.qudits[i].dimensions
+    
+    new_gate_list: list[QuditGate] = []
+
+    for gate in self.gate_list:
+      gate_qudits: list[Qudit] = []
+      gate_qudit_levels: list[int] = []
+      first_level = (gate.qudits[0].number, gate.levels[0])
+      second_level = (gate.qudits[-1].number, gate.levels[-1])
+      first_compressed_level = self.__get_compressed_qudit_level(labels, first_level)
+      second_compressed_level = self.__get_compressed_qudit_level(labels, second_level)
+      gate_qudits.append(qudits[first_compressed_level[0]])
+      if first_compressed_level[0] != second_compressed_level[0]:
+        gate_qudits.append(qudits[second_compressed_level[0]])
+      gate_qudit_levels.append(first_compressed_level[1])
+      gate_qudit_levels.append(second_compressed_level[1])
+      new_gate = QuditGate(gate.name, gate_qudits, gate_qudit_levels, gate.euler_angles)
+      new_gate_list.append(new_gate)
+    return Circuit(qudits, new_gate_list)   
+
+  def __get_compressed_qudit_level(self, labels: list[int], qudit_level: tuple[int, int]) -> tuple[int, int]:
+    grouped_labels: list[list[int]] = [[] for i in range(len(set(labels)))]
+    for i in range(len(labels)):
+      grouped_labels[labels[i]].append(i)
+    
+    original_qudits = [(qudit.number, qudit.dimensions) for qudit in self.qudits]
+    
+    original_qudit_idx, level_within_qudit = qudit_level
+
+    for compressed_idx, label in enumerate(grouped_labels):
+      if original_qudit_idx in label:
+        offset = sum(original_qudits[i][1] for i in label if i < original_qudit_idx)
+        new_level_within_compressed = offset + level_within_qudit
+        return (compressed_idx, new_level_within_compressed)
+    
+    raise ValueError("No possible qudit level found")
+    
+  
+  @staticmethod
+  def __collect_instructions(qc: QuantumCircuit) -> tuple[list[Instruction], int]:
+    num_qubits = len(qc.qubits)
+    register_offset_mapper = {}
+    last_offset = 0
+
+    for register in qc.qregs:
+      register_offset_mapper[register.name] = last_offset
+      last_offset = last_offset + register.size
+
+    instructions: list[Instruction] = []
+    for _i, gate in enumerate(qc.data):
+      name = ""
+      qubits: list[int] = []
+      params: list[float] = []
+
+      for field in gate:
+        if "library" in str(field) or "circuit" in str(field) or "Instruction" in str(field):
+          name = field.name
+          params = field.params
+
+        if "QuantumRegister" in str(field):
+          qubits += [(register_offset_mapper[f._register.name] + f._index) for f in field]
+
+      instructions.append(Instruction(name, qubits, params))
+
+    return instructions, num_qubits
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=\texttt{clustering.py},label=lst:clustering.py]
+from sknetwork.clustering import Louvain, Leiden, KCenters
+from sknetwork.data.parse import from_edge_list
+
+from graph import Graph
+from typing import Callable
+
+def louvain(modularity="dugue")-> Callable[[Graph], list[int]]:
+  def clustering_function(graph: Graph) -> list[int]:
+    louvain = Louvain(modularity=modularity)
+    adjacency = from_edge_list(graph.edge_list, weighted=True)
+    return louvain.fit_predict(adjacency) # type: ignore
+  return clustering_function
+
+def leiden(modularity="dugue") -> Callable[[Graph], list[int]]:
+  def clustering_function(graph: Graph) -> list[int]:
+    leiden = Leiden(modularity=modularity)
+    adjacency = from_edge_list(graph.edge_list, weighted=True)
+    return leiden.fit_predict(adjacency) # type: ignore
+  return clustering_function
+
+def kcenters(mean_cluster_size: int) -> Callable[[Graph], list[int]]:
+  def clustering_function(graph: Graph) -> list[int]:
+    kcenters = KCenters(n_clusters = len(graph.node_weights) // mean_cluster_size)
+    adjacency = from_edge_list(graph.edge_list, weighted=True)
+    return kcenters.fit_predict(adjacency) # type: ignore
+  return clustering_function
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=\texttt{processing.py},label=lst:processing.py]
+from os import makedirs
+from os.path import join, exists
+from typing import Callable
+from sknetwork.visualization import visualize_graph
+from sknetwork.data.parse import from_edge_list
+from circuit import Circuit
+from graph import Graph
+
+def process_circuit(circuit_file: str, out_dir: str, clustering_function: Callable[[Graph], list[int]], max_runs=1) -> int:
+  circuit = Circuit.from_qasm(circuit_file)
+  graph = circuit.generate_weighted_graph()
+  graph_history, labels_history = graph.reduce_graph(clustering_function, max_runs=max_runs)
+
+  for evolution in range(len(graph_history)):
+    evolution_dirname = "evolution-" + str(evolution)
+    visual_dir = join(out_dir, "visuals", evolution_dirname)
+    data_dir = join(out_dir, "data", evolution_dirname)
+    if not exists(visual_dir):
+      makedirs(visual_dir)
+    if not exists(data_dir):
+      makedirs(data_dir)
+
+    # save data
+    with open(join(data_dir, "circuit.json"), "w+") as data_file:
+      data_file.write(circuit.toJSON())
+
+    # generate svg
+    sknetwork_graph = from_edge_list(graph_history[evolution].edge_list, weighted=True)
+    visualize_graph(sknetwork_graph, filename=join(visual_dir, "graph"), node_size=20) # type: ignore
+    visualize_graph(sknetwork_graph, filename=join(visual_dir, "graph_w"), node_size=20, display_edge_weight=True) # type: ignore
+
+    if (evolution < len(labels_history)): # Last graph has no labels
+      circuit = circuit.get_updated_circuit_by_labels(labels_history[evolution])
+      visualize_graph(sknetwork_graph, filename=join(visual_dir, "graph_l"), node_size=20, labels=labels_history[evolution]) # type: ignore
+      visualize_graph(sknetwork_graph, filename=join(visual_dir, "graph_wl"), node_size=20, labels=labels_history[evolution], display_edge_weight=True) # type: ignore
+  return len(labels_history) # return actual runs
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=\texttt{main.py},label=lst:main.py]
+from os import listdir
+from os.path import isfile, join
+from processing import process_circuit
+
+import clustering
+
+circuits_dir = "circuits"
+solutions_dir = "solutions"
+
+circuit_files = [f for f in listdir(circuits_dir) if isfile(join(circuits_dir, f))]
+
+for circuit_file in circuit_files:
+  out_dir = join(solutions_dir, circuit_file[:-5])
+  runs = process_circuit(join(circuits_dir, circuit_file), join(out_dir, "louvain"), clustering.louvain(modularity="dugue"), max_runs=2)
+  print("processed file '%s' with algorithm louvain (dugue) in %d runs" % (circuit_file, runs))
+  runs = process_circuit(join(circuits_dir, circuit_file), join(out_dir, "leiden"), clustering.leiden(modularity="dugue"), max_runs=2)
+  print("processed file '%s' with algorithm leiden (dugue) in %d runs" % (circuit_file, runs))
+  runs = process_circuit(join(circuits_dir, circuit_file), join(out_dir, "kcenters"), clustering.kcenters(mean_cluster_size=4))
+  print("processed file '%s' with algorithm kcenters (mean_cluster_size 4) in %d runs" % (circuit_file, runs))
+  \end{lstlisting}
+  \begin{lstlisting}[caption=\texttt{requirements.txt},label=lst:requirements.txt]
+contourpy==1.3.0
+cycler==0.12.1
+dill==0.3.8
+fonttools==4.53.1
+kiwisolver==1.4.5
+matplotlib==3.9.2
+mpmath==1.3.0
+numpy==1.26.4
+packaging==24.1
+pbr==6.1.0
+pillow==10.4.0
+pylatexenc==2.10
+pyparsing==3.1.4
+python-dateutil==2.9.0.post0
+qiskit==1.2.0
+rustworkx==0.15.1
+scikit-network==0.33.0
+scipy==1.14.1
+six==1.16.0
+stevedore==5.3.0
+symengine==0.11.0
+sympy==1.13.2
+typing_extensions==4.12.2    
+  \end{lstlisting}
+  \begin{lstlisting}[language=Python,caption=\texttt{circuitinfo.py},label=lst:circuitinfo.py]
+import sys
+import json
+
+def help():
+  print("Usage: python circuitinfo.py path/to/circuit.json")
+
+file = sys.argv[1]
+
+if (len(sys.argv) < 2):
+  help()
+else:
+  filename = sys.argv[1]
+  try:
+    with open(filename, 'r', encoding='utf-8') as file:
+      data = json.load(file)
+      qudits = data["qudits"]
+      dimensions = [qudit["dimensions"] for qudit in qudits]
+      local_gates = 0
+      entangling_gates = 0
+      for gate in data["gates"]:
+        if len(gate["qudits"]) > 1:
+          entangling_gates += 1
+        else:
+          local_gates += 1
+      print("Number of qudits:", len(qudits))
+      print("Qudit dimensions:", dimensions)
+      print("Number of local gates:", local_gates)
+      print("Number of entangling gates:", entangling_gates)
+  except FileNotFoundError:
+    print(f"Error: The file '{filename}' was not found.")
+  \end{lstlisting}
+  \begin{lstlisting}[language=Nix,caption=\texttt{flake.nix},label=lst:flake.nix]
+{
+  description = "qudit-compression";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.flake-utils.url = "github:numtide/flake-utils";
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+      lib = nixpkgs.lib;
+      pythonldlibpath = lib.makeLibraryPath (with pkgs; [
+        zlib
+        zstd
+        stdenv.cc.cc
+        curl
+        openssl
+        attr
+        libssh
+        bzip2
+        libxml2
+        acl
+        libsodium
+        util-linux
+        xz
+        systemd
+      ]);
+    in {
+      devShell = pkgs.mkShell {
+        nativeBuildInputs = [ pkgs.bashInteractive ];
+        buildInputs = with pkgs; [
+          python311
+        ];
+        shellHook = with pkgs; ''
+          ${python311}/bin/python -m venv ./.virtualenv
+          source ./.virtualenv/bin/activate
+          export LD_LIBRARY_PATH="${pythonldlibpath}"
+          pip install -r requirements.txt
+        '';
+      };
+    });
+}
+  \end{lstlisting}
+  \begin{lstlisting}[caption=\texttt{flake.lock},label=lst:flake.lock]
+{
+  "nodes": {
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1734119587,
+        "narHash": "sha256-AKU6qqskl0yf2+JdRdD0cfxX4b9x3KKV5RqA6wijmPM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "3566ab7246670a43abd2ffa913cc62dad9cdf7d5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}    
+  \end{lstlisting}
